@@ -122,7 +122,7 @@ export default function CMITracker() {
 
   if (!currentUser) return <Login users={users} onLogin={u => { setCurrentUser(u); setSelIds([]); }} theme={theme} setTheme={setTheme} />;
 
-  const isA = currentUser.isAdmin;
+  const isA = currentUser.is_admin;
   const eUid = currentUser.id;
   const uLists = lists.filter(l => l.user_id === eUid);
   const aLists = selIds.length > 0 ? lists.filter(l => selIds.includes(l.id)) : [];
