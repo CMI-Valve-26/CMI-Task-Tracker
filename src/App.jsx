@@ -1,20 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "./supabase.js";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
 const BRAND = { primary: "#7c6bc4", dark: "#5b4a9e", light: "#9d8fd6", faint: "rgba(124,107,196,0.1)", border: "rgba(124,107,196,0.25)" };
 const LOGO_W = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAACGCAYAAACYCsWCAAAD6UlEQVR42u3dQZLbIBBAUUH5/ldWNpMqx7HHki2gG97fJmOg6S9AQmjbAAAAAAAAAAAAAAAAAAAAAAAAkInSq6B93/elAltKWT25rurzZ7Fs+dv33MgRI4FmE2qWPq8CNWb0eIzLTHGaqS1VoMbLYaRdUBByrBmX2dpXBSnWojxz7Gbs9ypI/eQ4GpuMMZy136sgxZIjYyxn7vcqSPHkyBTT2fu9ClJMOTLEdoV+L4IUV44WNwGiCnJl+87U6125hRzx5YgoyRXt69We3+r6rg6VHDnkiBTzlW4gFHLkkCPKSNKyfd+265O6XT7FIkeM2IyQZFTfv2prj2leJUc+OVYoLwq3kQGaZYv3qOTZ933vEcOVN1HWDamTp3X5q+8wJghJQRCSZBSv/DByik4QpB6VWktCkIk6+qqktpOYICRpnHCz3KEkCEnIQRCSZJtWHY2BNQhJUq0lZns3nyCTcyTRok6t3tVr/4EgRpFmiRZ93TH6DDGCLCxJhkX5q9/udSOAIItKklmO+3+3SMflkkSX42zit5SEIAtKEl2OSPW5Sbt8kkTYRJjht66IkxHESJJ2FLNIR6hEXfGrWQQhCTkIQpKoZUTfWm+RbuE+XMC/dY+4/8wIYiQZUtdnzzpanZzzTWwIQhLrDlMs062ocvSS+tO4GEHQVY5soxJBJLhpFUHWlORsspPDGsRoAiMIQBCAIIA1iDk+CAJs2/8f/fnmC7RX/L0pFlLL9NuxP0fOzSIIUgsQvSxTLBAj6gji02FzJ/wMNzAOjyCtXsohSX6yinCk3nWFQGBckvU4/bCl1HWVqwXGjhxR8uassLV1YECOKHnzSfm1Z2Gw5hiVN5+WW0cFCusuyHvnzdBDG0hCjsh58205NVNjMYccvfIm1F4skpDj099ucbLJVb9ZM10RMJccLcq5ur41a0AxjxxXldeivnWGwGKePoz2hak6W4CRv+8iHVdUWzeUKORoWY/md8J6NdiuXXIAAAAAAAAAANCZU/e9PcvAdAK8efbjZEWAIAAAAAAAAAAAYEG6vkF2/yT+1RPMI/+nVZ3+CUzHt+se6zCq7NF9cmanRq8YDXtQ+CwYtrKMRZ8EEgTIgI94IvYaYPBBEkYQkCOjICMX6ObecRN2akEiB3jVM6GchRV4BHGVjoc+CTrFitAxrqZkecRdLKQTtOeFrAq+KyiSCWKqo0+WnWKVUoorc7zkj9onHhTqBATul+GCGE1yrs9MsRbqEAkhJmmmWKO3mEgUWIPAGi2yINECXh4gAUKtQSTGsWndakn82/R2+lduAVOsZFelV1cnC3UAAAAAAAAAAAAAAIBt27Y//Sx1sQXGEZMAAAAASUVORK5CYII=";
 const LOGO_D = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAACGCAYAAACYCsWCAAADfUlEQVR42u3dQW7jMAxA0VLo/a/M2XaKAaZJLYmU3ge6ChrJFL9FOk788QEAAAAAAAAAAAAAAAAAAAAAAIBOxMKxUmyvIyfGMles0yc5yiRQkKMeQ6C27R55cJyOOZYhUCXksNNeKAg57oxLEkQSzGzKkxxnC0KO38cmyXGmIOR4LjZJjrMEIcfzsUlynCEIOebFJsnRu7Ekx5rYxOGCxKZ5xcxJkWNtbOIwOaLAXGNWiUWO9bHJg+RoMdcgRxs5quwkWfi48ukxgxzt5NgpSRaL//Qyb5CjpRw3jFeCz80BOuUW79w4bpBjHuMD3ZMnyUEQSGKCoJwku8WL/5SQQRDYlTb2sQQ5a6HzMjmmz5UgJJmVcEdcoSQISchBEJI0LKuigowEIUnVprmEsAQ5n1yYjLF47qlJt4vMTrTqfcfW3xAjyN2SdGjKY+eFAILcK0lnOb6+rknH45JUl+PVxA+CYFlZUUCOMvP5lHMtJcmD5Jj5Xr+Okx3ETtJ5F9Oko1SiXvfULIKQhBwEIUnhMUrfWq9J17hXEDAfHOvRONhB7CS75vqvzzpy4lgEweOSXP8oayWWcmu3HKukfisudhCslqPVrkQQCa6sIsi1kgQ59CCQ9HYQgCAAQQA9iBofBAHe4PtDf95+Au1D/6/EQmuZ8o3XfiIPQdBCgNJjKbFAjMI7iEeHnZ3w7S9gvLKDzPpSDkn6E6fOe1wSCOxLsiiaNz+a05j1xiBH0bx5SdixIDAgR5W8eXn8sThA0HNEpzmPjYHCvQ15dJnzaHiw6C3H6rz51Tij2cHiDDlW5U2pe7FIQo533zuqvudodkbAWXLMGOfR+Y7GAcU5cjw13uPzHYcEFuesYaknTI0DA4z+a1fm54rGggMlCjlmziNOCYa7dskBAAAAAAAAAMBKXr3u7bMMXOWAX1YECAIAAAAAAAAAAC5k9TfI8gdj5+L5VXj4SxYZe/eaZLXc3flBYf4yQLAmRwsClMdDPKENsIOAHOcJsrNB1w8VTdjTBQmL77gJ8swZHNbkekGqLYyzKVn+wlUsdBR02YlsCL4zKPoJotSxJteWWOHMXDL5k5hKLGdH69JOELtJz/5MiXXRgkgIMWlTYkWxxZcoBAH0aJUEiYIJ8PWPBCjVg0iMn5V1tyVx7l43JRZAkJeb7tCoAwAAAAAAAAAAAAAAfOcP1MSeA0oDJCYAAAAASUVORK5CYII=";
+const ROLES = { super_admin: { label: "Owner", color: "#c4a76b" }, manager: { label: "Manager", color: BRAND.primary }, user: { label: "User", color: "#8a8a8a" } };
 const STATUSES = [
   { key: "open", label: "Open", color: BRAND.primary, bg: BRAND.faint },
   { key: "in_progress", label: "In Progress", color: "#c4a76b", bg: "rgba(196,167,107,0.12)" },
   { key: "on_hold", label: "On Hold", color: "#8a8a8a", bg: "rgba(138,138,138,0.12)" },
   { key: "complete", label: "Complete", color: "#6bc4a0", bg: "rgba(107,196,160,0.12)" },
 ];
-const LIST_TYPES = {
-  tasks: { label: "Tasks" }, quotes: { label: "Quotes" },
-  sales_orders: { label: "Sales Orders" }, po_wo: { label: "PO / Work Orders" },
-};
+const LIST_TYPES = { tasks: { label: "Tasks" }, quotes: { label: "Quotes" }, sales_orders: { label: "Sales Orders" }, po_wo: { label: "PO / Work Orders" } };
 const LIST_ICONS = { tasks: "check", quotes: "list", sales_orders: "box", po_wo: "wrench" };
 const DEFAULT_LISTS = [
   { type: "quotes", name: "My Quotes" }, { type: "tasks", name: "My Tasks" },
@@ -25,9 +22,11 @@ const fmtDateTime = (d) => { if (!d) return ""; try { return new Date(d).toLocal
 const F = "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 const br = { border: "none", outline: "none", background: "none", fontFamily: F };
 const themes = {
-  dark: { bg: "#111114", text: "#eaeaed", muted: "#75757e", card: "#1c1c20", cardHover: "#222226", border: "#2a2a30", headerBg: "rgba(17,17,20,0.92)", inputBg: "#161618", overlay: "rgba(0,0,0,0.65)" },
-  light: { bg: "#f6f5f3", text: "#1a1a1e", muted: "#8e8e96", card: "#ffffff", cardHover: "#faf9f8", border: "#e4e3e0", headerBg: "rgba(246,245,243,0.92)", inputBg: "#fff", overlay: "rgba(0,0,0,0.35)" },
+  dark: { bg: "#111114", text: "#eaeaed", muted: "#75757e", card: "#1c1c20", cardHover: "#222226", border: "#2a2a30", headerBg: "rgba(17,17,20,0.92)", inputBg: "#161618", overlay: "rgba(0,0,0,0.65)", sidebar: "#161618", sideHover: "#1e1e22" },
+  light: { bg: "#f6f5f3", text: "#1a1a1e", muted: "#8e8e96", card: "#ffffff", cardHover: "#faf9f8", border: "#e4e3e0", headerBg: "rgba(246,245,243,0.92)", inputBg: "#fff", overlay: "rgba(0,0,0,0.35)", sidebar: "#efeee8", sideHover: "#e8e7e1" },
 };
+const SIDEBAR_W = 260;
+const SIDEBAR_W_COLLAPSED = 0;
 
 const Icon = ({ name, size = 18, color = BRAND.primary }) => {
   const p = {
@@ -40,13 +39,16 @@ const Icon = ({ name, size = 18, color = BRAND.primary }) => {
     plus: "M12 4v16m8-8H4", x: "M6 18L18 6M6 6l12 12",
     star: "M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z",
     trash: "M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16",
-    chevDown: "M19 9l-7 7-7-7", chevRight: "M9 5l7 7-7 7",
+    chevDown: "M19 9l-7 7-7-7", chevRight: "M9 5l7 7-7 7", chevLeft: "M15 19l-7-7 7-7",
     alert: "M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
     list: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2",
     box: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4",
     wrench: "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z",
     check: "M5 13l4 4L19 7",
     refresh: "M4 4v5h5M20 20v-5h-5M4 9a8 8 0 0113.292-4.293M20 15a8 8 0 01-13.292 4.293",
+    menu: "M4 6h16M4 12h16M4 18h16",
+    users: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
+    shield: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d={p[name]} /></svg>;
 };
@@ -57,23 +59,27 @@ const db = {
   async getLists() { const { data } = await supabase.from("lists").select("*").order("created_at"); return data || []; },
   async getTasks() { const { data } = await supabase.from("tasks").select("*").order("created_at", { ascending: false }); return data || []; },
   async getAudit(taskId) { const { data } = await supabase.from("audit_log").select("*").eq("task_id", taskId).order("created_at"); return data || []; },
-
   async addTask(task) { const { data } = await supabase.from("tasks").insert(task).select().single(); return data; },
   async updateTask(id, updates) { const { data } = await supabase.from("tasks").update(updates).eq("id", id).select().single(); return data; },
   async deleteTask(id) { await supabase.from("tasks").delete().eq("id", id); },
-
   async addList(list) { const { data } = await supabase.from("lists").insert(list).select().single(); return data; },
   async deleteList(id) { await supabase.from("tasks").delete().eq("list_id", id); await supabase.from("lists").delete().eq("id", id); },
-
   async addUser(user) { const { data } = await supabase.from("app_users").insert(user).select().single(); return data; },
   async updateUser(id, updates) { const { data } = await supabase.from("app_users").update(updates).eq("id", id).select().single(); return data; },
-  async deleteUser(id) {
-    await supabase.from("tasks").delete().eq("user_id", id);
-    await supabase.from("lists").delete().eq("user_id", id);
-    await supabase.from("app_users").delete().eq("id", id);
-  },
-
+  async deleteUser(id) { await supabase.from("tasks").delete().eq("user_id", id); await supabase.from("lists").delete().eq("user_id", id); await supabase.from("app_users").delete().eq("id", id); },
   async addAudit(entry) { await supabase.from("audit_log").insert(entry); },
+};
+
+// ─── Role helpers ────────────────────────────────────────────────────────────
+const isSuperAdmin = (u) => u?.role === "super_admin";
+const isManager = (u) => u?.role === "manager";
+const hasElevated = (u) => u?.role === "super_admin" || u?.role === "manager";
+
+// Which users can this person see?
+const getVisibleUsers = (currentUser, allUsers) => {
+  if (isSuperAdmin(currentUser)) return allUsers; // super admin sees everyone
+  if (isManager(currentUser)) return allUsers.filter(u => u.role !== "super_admin"); // manager sees everyone except super admin
+  return allUsers.filter(u => u.id === currentUser.id); // regular user sees only self
 };
 
 // ─── MAIN APP ────────────────────────────────────────────────────────────────
@@ -91,6 +97,7 @@ export default function CMITracker() {
   const [adminOpen, setAdminOpen] = useState(false);
   const [metricsOpen, setMetricsOpen] = useState(false);
   const [activeOpen, setActiveOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [collapsedUsers, setCollapsedUsers] = useState({});
   const [loading, setLoading] = useState(true);
 
@@ -102,8 +109,6 @@ export default function CMITracker() {
 
   useEffect(() => { loadAll(); }, [loadAll]);
   useEffect(() => { localStorage.setItem("cmi-theme", theme); }, [theme]);
-
-  // Poll for updates every 15 seconds so team sees each other's changes
   useEffect(() => {
     if (!currentUser) return;
     const interval = setInterval(loadAll, 15000);
@@ -122,7 +127,8 @@ export default function CMITracker() {
 
   if (!currentUser) return <Login users={users} onLogin={u => { setCurrentUser(u); setSelIds([]); }} theme={theme} setTheme={setTheme} />;
 
-  const isA = currentUser.is_admin;
+  const elevated = hasElevated(currentUser);
+  const visibleUsers = getVisibleUsers(currentUser, users);
   const eUid = currentUser.id;
   const uLists = lists.filter(l => l.user_id === eUid);
   const aLists = selIds.length > 0 ? lists.filter(l => selIds.includes(l.id)) : [];
@@ -130,6 +136,7 @@ export default function CMITracker() {
   const gActive = (lid) => tasks.filter(t => t.list_id === lid && t.status !== "complete").length;
   const isHome = !activeOpen && !metricsOpen && selIds.length === 0;
   const t = themes[theme];
+  const roleLabel = ROLES[currentUser.role]?.label || "User";
 
   const addTask = async (lid, d) => {
     const list = lists.find(l => l.id === lid);
@@ -147,7 +154,6 @@ export default function CMITracker() {
   };
 
   const updTask = async (id, updates) => {
-    // Map camelCase to snake_case for DB
     const dbUpdates = {};
     const keyMap = { customer: "customer", reference: "reference", amount: "amount", dateReceived: "date_received", dueDate: "due_date", title: "title", notes: "notes", status: "status", starred: "starred" };
     for (const [k, v] of Object.entries(updates)) dbUpdates[keyMap[k] || k] = v;
@@ -174,32 +180,15 @@ export default function CMITracker() {
     if (updated) setTasks(prev => prev.map(t => t.id === tid ? updated : t));
   };
 
-  const delTask = async (tid) => {
-    await db.deleteTask(tid);
-    setTasks(prev => prev.filter(t => t.id !== tid));
-    if (detailTask?.id === tid) setDetailTask(null);
-  };
-
-  const addList = async (type, name) => {
-    const list = await db.addList({ user_id: eUid, type, name });
-    if (list) setLists(prev => [...prev, list]);
-  };
-
-  const delList = async (lid) => {
-    await db.deleteList(lid);
-    setLists(prev => prev.filter(l => l.id !== lid));
-    setTasks(prev => prev.filter(t => t.list_id !== lid));
-    setSelIds(p => p.filter(i => i !== lid));
-  };
+  const delTask = async (tid) => { await db.deleteTask(tid); setTasks(prev => prev.filter(t => t.id !== tid)); if (detailTask?.id === tid) setDetailTask(null); };
+  const addList = async (type, name) => { const list = await db.addList({ user_id: eUid, type, name }); if (list) setLists(prev => [...prev, list]); };
+  const delList = async (lid) => { await db.deleteList(lid); setLists(prev => prev.filter(l => l.id !== lid)); setTasks(prev => prev.filter(t => t.list_id !== lid)); setSelIds(p => p.filter(i => i !== lid)); };
 
   const addUser = async (name, pin) => {
-    const user = await db.addUser({ name, pin, is_admin: false });
+    const user = await db.addUser({ name, pin, role: "user" });
     if (user) {
       setUsers(prev => [...prev, user]);
-      for (const dl of DEFAULT_LISTS) {
-        const list = await db.addList({ user_id: user.id, type: dl.type, name: dl.name });
-        if (list) setLists(prev => [...prev, list]);
-      }
+      for (const dl of DEFAULT_LISTS) { const list = await db.addList({ user_id: user.id, type: dl.type, name: dl.name }); if (list) setLists(prev => [...prev, list]); }
     }
   };
 
@@ -207,120 +196,123 @@ export default function CMITracker() {
     const dbUpdates = {};
     if (updates.name !== undefined) dbUpdates.name = updates.name;
     if (updates.pin !== undefined) dbUpdates.pin = updates.pin;
-    if (updates.isAdmin !== undefined) dbUpdates.is_admin = updates.isAdmin;
+    if (updates.role !== undefined) dbUpdates.role = updates.role;
     const updated = await db.updateUser(id, dbUpdates);
     if (updated) setUsers(prev => prev.map(u => u.id === id ? updated : u));
   };
 
-  const deleteUser = async (id) => {
-    await db.deleteUser(id);
-    setUsers(prev => prev.filter(u => u.id !== id));
-    setLists(prev => prev.filter(l => l.user_id !== id));
-    setTasks(prev => prev.filter(t => t.user_id !== id));
-  };
+  const deleteUser = async (id) => { await db.deleteUser(id); setUsers(prev => prev.filter(u => u.id !== id)); setLists(prev => prev.filter(l => l.user_id !== id)); setTasks(prev => prev.filter(t => t.user_id !== id)); };
 
-  const openDetail = async (task) => {
-    setDetailTask(task);
-    const a = await db.getAudit(task.id);
-    setDetailAudit(a);
-  };
+  const openDetail = async (task) => { setDetailTask(task); const a = await db.getAudit(task.id); setDetailAudit(a); };
 
-  const uMetrics = isA ? users.map(u => { const ut = tasks.filter(t => t.user_id === u.id); return { ...u, open: ut.filter(t => t.status === "open").length, inP: ut.filter(t => t.status === "in_progress").length, hold: ut.filter(t => t.status === "on_hold").length, done: ut.filter(t => t.status === "complete").length, total: ut.length }; }) : [];
-  const allAct = isA ? users.map(u => ({ user: u, lists: lists.filter(l => l.user_id === u.id).map(l => ({ ...l, tasks: tasks.filter(t => t.list_id === l.id && t.status !== "complete") })).filter(l => l.tasks.length > 0) })).filter(u => u.lists.length > 0) : [];
+  // Metrics & active: only show visible users
+  const uMetrics = elevated ? visibleUsers.map(u => { const ut = tasks.filter(t => t.user_id === u.id); return { ...u, open: ut.filter(t => t.status === "open").length, inP: ut.filter(t => t.status === "in_progress").length, hold: ut.filter(t => t.status === "on_hold").length, done: ut.filter(t => t.status === "complete").length, total: ut.length }; }) : [];
+  const allAct = elevated ? visibleUsers.map(u => ({ user: u, lists: lists.filter(l => l.user_id === u.id).map(l => ({ ...l, tasks: tasks.filter(t => t.list_id === l.id && t.status !== "complete") })).filter(l => l.tasks.length > 0) })).filter(u => u.lists.length > 0) : [];
 
+  // ─── RENDER ──────────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: "100vh", background: t.bg, color: t.text, fontFamily: F, transition: "background 0.3s" }}>
       <header style={{ background: t.headerBg, borderBottom: `1px solid ${t.border}`, padding: "14px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(16px)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          {elevated && <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ ...br, cursor: "pointer", padding: 6, borderRadius: 8 }} title="Toggle sidebar"><Icon name="menu" size={20} color={t.muted} /></button>}
           <div style={{ width: 38, height: 38, borderRadius: 10, background: `linear-gradient(135deg, ${BRAND.primary}, ${BRAND.dark})`, display: "flex", alignItems: "center", justifyContent: "center", padding: 5, overflow: "hidden" }}><img src={LOGO_W} alt="CMI" style={{ width: "100%", objectFit: "contain" }} /></div>
           <div>
             <div style={{ fontWeight: 700, fontSize: 17, letterSpacing: -0.4 }}>CMI Valve Tracker</div>
-            <div style={{ fontSize: 13, color: t.muted }}>{currentUser.name}{isA ? " · Admin" : ""}</div>
+            <div style={{ fontSize: 13, color: t.muted }}>{currentUser.name} · {roleLabel}</div>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <HBtn t={t} active={isHome} onClick={() => { setSelIds([]); setActiveOpen(false); setMetricsOpen(false); setAdminOpen(false); }}><Icon name="home" size={15} color={isHome ? "#fff" : t.muted} /> Home</HBtn>
-          {isA && <>
-            <HBtn t={t} active={activeOpen} onClick={() => { setActiveOpen(!activeOpen); setMetricsOpen(false); setSelIds([]); }}><Icon name="bolt" size={15} color={activeOpen ? "#fff" : t.muted} /> Active</HBtn>
-            <HBtn t={t} active={metricsOpen} onClick={() => { setMetricsOpen(!metricsOpen); setActiveOpen(false); setSelIds([]); }}><Icon name="chart" size={15} color={metricsOpen ? "#fff" : t.muted} /> Metrics</HBtn>
-            <HBtn t={t} active={adminOpen} onClick={() => setAdminOpen(!adminOpen)}><Icon name="settings" size={15} color={adminOpen ? "#fff" : t.muted} /> Admin</HBtn>
+          {elevated && <>
+            <HBtn t={t} active={activeOpen} onClick={() => { setActiveOpen(!activeOpen); setMetricsOpen(false); setAdminOpen(false); setSelIds([]); }}><Icon name="bolt" size={15} color={activeOpen ? "#fff" : t.muted} /> Active</HBtn>
+            <HBtn t={t} active={metricsOpen} onClick={() => { setMetricsOpen(!metricsOpen); setActiveOpen(false); setAdminOpen(false); setSelIds([]); }}><Icon name="chart" size={15} color={metricsOpen ? "#fff" : t.muted} /> Metrics</HBtn>
+            <HBtn t={t} active={adminOpen} onClick={() => { setAdminOpen(!adminOpen); setActiveOpen(false); setMetricsOpen(false); }}><Icon name="settings" size={15} color={adminOpen ? "#fff" : t.muted} /> Admin</HBtn>
           </>}
-          <button onClick={loadAll} title="Refresh data" style={{ ...br, width: 38, height: 38, borderRadius: 10, background: t.card, border: `1px solid ${t.border}`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="refresh" size={16} color={t.muted} /></button>
+          <button onClick={loadAll} title="Refresh" style={{ ...br, width: 38, height: 38, borderRadius: 10, background: t.card, border: `1px solid ${t.border}`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="refresh" size={16} color={t.muted} /></button>
           <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} style={{ ...br, width: 38, height: 38, borderRadius: 10, background: t.card, border: `1px solid ${t.border}`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name={theme === "dark" ? "sun" : "moon"} size={16} color={t.muted} /></button>
           <button onClick={() => { setCurrentUser(null); setSelIds([]); }} style={{ ...br, height: 38, borderRadius: 10, color: t.muted, border: `1px solid ${t.border}`, fontSize: 13, cursor: "pointer", padding: "0 14px", fontWeight: 500 }}>Sign Out</button>
         </div>
       </header>
 
-      <div style={{ maxWidth: 1440, margin: "0 auto", padding: "24px 28px" }}>
-        {adminOpen && <AdminPanel t={t} users={users} currentUser={currentUser} onAdd={addUser} onUpdate={updateUser} onDelete={deleteUser} onClose={() => setAdminOpen(false)} />}
-        {metricsOpen && <Metrics t={t} data={uMetrics} />}
-        {activeOpen && <AllActive t={t} data={allAct} onTask={openDetail} onStatus={chgStatus} />}
+      <div style={{ display: "flex" }}>
+        {/* ─── SIDEBAR (elevated users only) ─── */}
+        {elevated && <div style={{ width: sidebarOpen ? SIDEBAR_W : SIDEBAR_W_COLLAPSED, minHeight: "calc(100vh - 67px)", background: t.sidebar, borderRight: sidebarOpen ? `1px solid ${t.border}` : "none", transition: "width 0.25s ease", overflow: "hidden", flexShrink: 0, position: "sticky", top: 67, alignSelf: "flex-start" }}>
+          {sidebarOpen && <div style={{ width: SIDEBAR_W, padding: "16px 12px", overflowY: "auto", maxHeight: "calc(100vh - 67px)" }}>
+            <div style={{ fontSize: 11, color: t.muted, textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 600, padding: "4px 8px", marginBottom: 4 }}>Team Lists</div>
+            {visibleUsers.map(u => {
+              const uL = lists.filter(l => l.user_id === u.id);
+              if (uL.length === 0) return null;
+              const collapsed = collapsedUsers[u.id];
+              const totalActive = uL.reduce((sum, l) => sum + gActive(l.id), 0);
+              const isSelf = u.id === currentUser.id;
+              return <div key={u.id} style={{ marginBottom: 2 }}>
+                <button onClick={() => setCollapsedUsers(p => ({ ...p, [u.id]: !p[u.id] }))}
+                  style={{ ...br, width: "100%", textAlign: "left", padding: "8px 8px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", color: t.text, display: "flex", alignItems: "center", gap: 6, transition: "background 0.15s" }}
+                  onMouseEnter={e => e.currentTarget.style.background = t.sideHover} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                  <Icon name={collapsed ? "chevRight" : "chevDown"} size={12} color={t.muted} />
+                  <span style={{ flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{isSelf ? "My Lists" : u.name?.split(" ")[0]}</span>
+                  {totalActive > 0 && <span style={{ background: BRAND.faint, color: BRAND.primary, borderRadius: 8, padding: "1px 6px", fontSize: 11, fontWeight: 700 }}>{totalActive}</span>}
+                </button>
+                {!collapsed && <div style={{ paddingLeft: 8, marginBottom: 4 }}>
+                  {uL.map(l => {
+                    const act = selIds.includes(l.id); const c = gActive(l.id);
+                    return <button key={l.id} onClick={() => { setSelIds(p => p.includes(l.id) ? p.filter(x => x !== l.id) : [...p, l.id]); setActiveOpen(false); setMetricsOpen(false); setAdminOpen(false); }}
+                      style={{ ...br, width: "100%", textAlign: "left", padding: "6px 8px", borderRadius: 8, fontSize: 13, cursor: "pointer", color: act ? BRAND.primary : t.text, fontWeight: act ? 600 : 400, display: "flex", alignItems: "center", gap: 6, background: act ? BRAND.faint : "transparent", transition: "all 0.15s", marginBottom: 1 }}
+                      onMouseEnter={e => { if (!act) e.currentTarget.style.background = t.sideHover; }} onMouseLeave={e => { if (!act) e.currentTarget.style.background = "transparent"; }}>
+                      <Icon name={LIST_ICONS[l.type]} size={14} color={act ? BRAND.primary : t.muted} />
+                      <span style={{ flex: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{l.name}</span>
+                      {c > 0 && <span style={{ fontSize: 11, color: act ? BRAND.primary : t.muted, fontWeight: 600 }}>{c}</span>}
+                    </button>;
+                  })}
+                </div>}
+              </div>;
+            })}
+            {selIds.length > 0 && <button onClick={() => setSelIds([])} style={{ ...br, width: "100%", padding: "8px", borderRadius: 8, fontSize: 12, cursor: "pointer", color: t.muted, marginTop: 8, fontWeight: 500, textAlign: "center", border: `1px solid ${t.border}` }}>Clear selection</button>}
+          </div>}
+        </div>}
 
-        {!metricsOpen && !activeOpen && <>
-          {isA ? (
-            <div style={{ marginBottom: 24 }}>
-              {users.map(u => {
-                const uL = lists.filter(l => l.user_id === u.id);
-                if (uL.length === 0) return null;
-                const collapsed = collapsedUsers[u.id];
-                const selectedCount = uL.filter(l => selIds.includes(l.id)).length;
-                const totalActive = uL.reduce((sum, l) => sum + gActive(l.id), 0);
-                return <div key={u.id} style={{ marginBottom: 6 }}>
-                  <button onClick={() => setCollapsedUsers(p => ({ ...p, [u.id]: !p[u.id] }))}
-                    style={{ ...br, fontSize: 12, color: t.muted, marginBottom: collapsed ? 0 : 8, textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, padding: "4px 0" }}>
-                    <Icon name={collapsed ? "chevRight" : "chevDown"} size={12} color={t.muted} />
-                    {u.name}'s Lists
-                    {totalActive > 0 && <span style={{ background: BRAND.faint, color: BRAND.primary, borderRadius: 8, padding: "1px 6px", fontSize: 11, fontWeight: 700, textTransform: "none", letterSpacing: 0 }}>{totalActive} open</span>}
-                    {selectedCount > 0 && <span style={{ background: BRAND.primary, color: "#fff", borderRadius: 8, padding: "1px 6px", fontSize: 11, fontWeight: 700, textTransform: "none", letterSpacing: 0 }}>{selectedCount} selected</span>}
-                  </button>
-                  {!collapsed && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-                    {uL.map(l => {
-                      const act = selIds.includes(l.id); const c = gActive(l.id);
-                      return <button key={l.id} onClick={() => setSelIds(p => p.includes(l.id) ? p.filter(x => x !== l.id) : [...p, l.id])}
-                        style={{ ...br, padding: "10px 20px", borderRadius: 12, fontSize: 14, cursor: "pointer", background: act ? BRAND.primary : t.card, color: act ? "#fff" : t.text, border: `1px solid ${act ? BRAND.primary : t.border}`, fontWeight: act ? 600 : 400, transition: "all 0.2s", display: "flex", alignItems: "center", gap: 8 }}>
-                        <Icon name={LIST_ICONS[l.type]} size={15} color={act ? "#fff" : t.muted} />
-                        {l.name}
-                        {c > 0 && <span style={{ background: act ? "rgba(255,255,255,0.25)" : BRAND.faint, color: act ? "#fff" : BRAND.primary, borderRadius: 10, padding: "2px 8px", fontSize: 12, fontWeight: 700 }}>{c}</span>}
-                      </button>;
-                    })}
-                  </div>}
-                </div>;
-              })}
-              {selIds.length > 0 && <button onClick={() => setSelIds([])} style={{ ...br, padding: "6px 14px", borderRadius: 8, fontSize: 12, cursor: "pointer", color: t.muted, border: `1px solid ${t.border}`, marginTop: 4, fontWeight: 500 }}>Clear selection</button>}
-            </div>
-          ) : (
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 12, color: t.muted, marginBottom: 10, textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 600 }}>My Lists</div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {uLists.map(l => {
-                  const act = selIds.includes(l.id); const c = gActive(l.id);
-                  return <button key={l.id} onClick={() => setSelIds(p => p.includes(l.id) ? p.filter(x => x !== l.id) : [...p, l.id])}
-                    style={{ ...br, padding: "10px 20px", borderRadius: 12, fontSize: 14, cursor: "pointer", background: act ? BRAND.primary : t.card, color: act ? "#fff" : t.text, border: `1px solid ${act ? BRAND.primary : t.border}`, fontWeight: act ? 600 : 400, transition: "all 0.2s", display: "flex", alignItems: "center", gap: 8 }}>
-                    <Icon name={LIST_ICONS[l.type]} size={15} color={act ? "#fff" : t.muted} />
-                    {l.name}
-                    {c > 0 && <span style={{ background: act ? "rgba(255,255,255,0.25)" : BRAND.faint, color: act ? "#fff" : BRAND.primary, borderRadius: 10, padding: "2px 8px", fontSize: 12, fontWeight: 700 }}>{c}</span>}
-                  </button>;
-                })}
-                <NewList t={t} onAdd={addList} />
+        {/* ─── MAIN CONTENT ─── */}
+        <div style={{ flex: 1, minWidth: 0, padding: "24px 28px", maxWidth: 1440, margin: "0 auto" }}>
+          {adminOpen && <AdminPanel t={t} users={visibleUsers} currentUser={currentUser} onAdd={addUser} onUpdate={updateUser} onDelete={deleteUser} onClose={() => setAdminOpen(false)} />}
+          {metricsOpen && <Metrics t={t} data={uMetrics} />}
+          {activeOpen && <AllActive t={t} data={allAct} onTask={openDetail} onStatus={chgStatus} />}
+
+          {!metricsOpen && !activeOpen && !adminOpen && <>
+            {/* Non-elevated users still see inline list buttons */}
+            {!elevated && (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 12, color: t.muted, marginBottom: 10, textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 600 }}>My Lists</div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {uLists.map(l => {
+                    const act = selIds.includes(l.id); const c = gActive(l.id);
+                    return <button key={l.id} onClick={() => setSelIds(p => p.includes(l.id) ? p.filter(x => x !== l.id) : [...p, l.id])}
+                      style={{ ...br, padding: "10px 20px", borderRadius: 12, fontSize: 14, cursor: "pointer", background: act ? BRAND.primary : t.card, color: act ? "#fff" : t.text, border: `1px solid ${act ? BRAND.primary : t.border}`, fontWeight: act ? 600 : 400, transition: "all 0.2s", display: "flex", alignItems: "center", gap: 8 }}>
+                      <Icon name={LIST_ICONS[l.type]} size={15} color={act ? "#fff" : t.muted} />
+                      {l.name}
+                      {c > 0 && <span style={{ background: act ? "rgba(255,255,255,0.25)" : BRAND.faint, color: act ? "#fff" : BRAND.primary, borderRadius: 10, padding: "2px 8px", fontSize: 12, fontWeight: 700 }}>{c}</span>}
+                    </button>;
+                  })}
+                  <NewList t={t} onAdd={addList} />
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {aLists.length === 0 ? (
-            <Dashboard t={t} uLists={uLists} tasks={tasks} users={users} cur={currentUser} isA={isA} eUid={eUid} onSel={id => setSelIds([id])} gActive={gActive} />
-          ) : (
-            <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(aLists.length, 4)}, 1fr)`, gap: 16 }}>
-              {aLists.map(l => {
-                const owner = users.find(u => u.id === l.user_id);
-                return <ListPanel key={l.id} list={l} tasks={gTasks(l.id)} t={t}
-                  ownerName={isA ? owner?.name?.split(" ")[0] : null}
-                  showDone={showDone[l.id]} togDone={() => setShowDone(p => ({ ...p, [l.id]: !p[l.id] }))}
-                  onAdd={d => addTask(l.id, d)} onStatus={chgStatus} onStar={togStar} onTask={openDetail}
-                  onDel={() => delList(l.id)} qaOpen={qaOpen === l.id} setQa={v => setQaOpen(v ? l.id : null)} />;
-              })}
-            </div>
-          )}
-        </>}
+            {aLists.length === 0 ? (
+              <Dashboard t={t} uLists={uLists} tasks={tasks} users={users} cur={currentUser} elevated={elevated} eUid={eUid} onSel={id => { setSelIds([id]); setActiveOpen(false); setMetricsOpen(false); setAdminOpen(false); }} gActive={gActive} />
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(aLists.length, 4)}, 1fr)`, gap: 16 }}>
+                {aLists.map(l => {
+                  const owner = users.find(u => u.id === l.user_id);
+                  return <ListPanel key={l.id} list={l} tasks={gTasks(l.id)} t={t}
+                    ownerName={elevated && l.user_id !== eUid ? owner?.name?.split(" ")[0] : null}
+                    showDone={showDone[l.id]} togDone={() => setShowDone(p => ({ ...p, [l.id]: !p[l.id] }))}
+                    onAdd={d => addTask(l.id, d)} onStatus={chgStatus} onStar={togStar} onTask={openDetail}
+                    onDel={() => delList(l.id)} qaOpen={qaOpen === l.id} setQa={v => setQaOpen(v ? l.id : null)} />;
+                })}
+              </div>
+            )}
+          </>}
+        </div>
       </div>
 
       {detailTask && <Detail task={detailTask} list={lists.find(l => l.id === detailTask.list_id)}
@@ -333,7 +325,7 @@ export default function CMITracker() {
   );
 }
 
-// ─── All UI Components (same as before, adapted for snake_case DB fields) ────
+// ─── UI Components ───────────────────────────────────────────────────────────
 
 function HBtn({ t, children, active, onClick }) {
   return <button onClick={onClick} style={{ ...br, padding: "8px 14px", borderRadius: 10, fontSize: 13, cursor: "pointer", fontWeight: 500,
@@ -376,8 +368,8 @@ function Login({ users, onLogin, theme, setTheme }) {
   );
 }
 
-function Dashboard({ t, uLists, tasks, users, cur, isA, eUid, onSel, gActive }) {
-  const un = isA ? users.find(u => u.id === eUid)?.name : cur.name;
+function Dashboard({ t, uLists, tasks, users, cur, elevated, eUid, onSel, gActive }) {
+  const un = cur.name;
   const ut = tasks.filter(tk => tk.user_id === eUid);
   const o = ut.filter(tk => tk.status === "open").length;
   const ip = ut.filter(tk => tk.status === "in_progress").length;
@@ -411,22 +403,24 @@ function Dashboard({ t, uLists, tasks, users, cur, isA, eUid, onSel, gActive }) 
         {overdue.slice(0,3).map(tk => <div key={tk.id} style={{ fontSize: 13, color: t.text, padding: "2px 0" }}>{tk.customer ? `${tk.customer} — ` : ""}{tk.reference || "Untitled"} <span style={{ color: t.muted }}>· due {fmtDate(tk.due_date)}</span></div>)}
       </div>
     </div>}
-    <div style={{ fontSize: 12, color: t.muted, marginBottom: 12, textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 600 }}>Your Lists</div>
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 14, marginBottom: 32 }}>
-      {uLists.map(l => {
-        const ac = gActive(l.id); const dc = tasks.filter(tk => tk.list_id === l.id && tk.status === "complete").length;
-        return <div key={l.id} onClick={() => onSel(l.id)} style={{ background: t.card, borderRadius: 14, border: `1px solid ${t.border}`, padding: 22, cursor: "pointer", transition: "all 0.2s" }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = BRAND.primary; e.currentTarget.style.transform = "translateY(-2px)"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = t.border; e.currentTarget.style.transform = "translateY(0)"; }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: BRAND.faint, display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name={LIST_ICONS[l.type]} size={20} /></div>
-            {ac > 0 && <span style={{ background: BRAND.faint, color: BRAND.primary, borderRadius: 10, padding: "3px 10px", fontSize: 13, fontWeight: 700 }}>{ac}</span>}
-          </div>
-          <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 4 }}>{l.name}</div>
-          <div style={{ fontSize: 13, color: t.muted }}>{ac} active · {dc} done</div>
-        </div>;
-      })}
-    </div>
+    {!elevated && <>
+      <div style={{ fontSize: 12, color: t.muted, marginBottom: 12, textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 600 }}>Your Lists</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 14, marginBottom: 32 }}>
+        {uLists.map(l => {
+          const ac = gActive(l.id); const dc = tasks.filter(tk => tk.list_id === l.id && tk.status === "complete").length;
+          return <div key={l.id} onClick={() => onSel(l.id)} style={{ background: t.card, borderRadius: 14, border: `1px solid ${t.border}`, padding: 22, cursor: "pointer", transition: "all 0.2s" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = BRAND.primary; e.currentTarget.style.transform = "translateY(-2px)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = t.border; e.currentTarget.style.transform = "translateY(0)"; }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 10, background: BRAND.faint, display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name={LIST_ICONS[l.type]} size={20} /></div>
+              {ac > 0 && <span style={{ background: BRAND.faint, color: BRAND.primary, borderRadius: 10, padding: "3px 10px", fontSize: 13, fontWeight: 700 }}>{ac}</span>}
+            </div>
+            <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 4 }}>{l.name}</div>
+            <div style={{ fontSize: 13, color: t.muted }}>{ac} active · {dc} done</div>
+          </div>;
+        })}
+      </div>
+    </>}
     {recent.length > 0 && <div>
       <div style={{ fontSize: 12, color: t.muted, marginBottom: 12, textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 600 }}>Recently Updated</div>
       <div style={{ background: t.card, borderRadius: 14, border: `1px solid ${t.border}`, overflow: "hidden" }}>
@@ -605,11 +599,13 @@ function NewList({ t, onAdd }) {
 function AdminPanel({ t, users, currentUser, onAdd, onUpdate, onDelete, onClose }) {
   const [newName, setNewName] = useState(""); const [newPin, setNewPin] = useState("");
   const [editId, setEditId] = useState(null);
-  const [editName, setEditName] = useState(""); const [editPin, setEditPin] = useState("");
+  const [editName, setEditName] = useState(""); const [editPin, setEditPin] = useState(""); const [editRole, setEditRole] = useState("user");
   const [confirmDel, setConfirmDel] = useState(null);
-  const startEdit = (u) => { setEditId(u.id); setEditName(u.name); setEditPin(u.pin); };
-  const saveEdit = () => { if (editName && editPin.length === 4) { onUpdate(editId, { name: editName, pin: editPin }); setEditId(null); } };
+  const startEdit = (u) => { setEditId(u.id); setEditName(u.name); setEditPin(u.pin); setEditRole(u.role || "user"); };
+  const saveEdit = () => { if (editName && editPin.length === 4) { onUpdate(editId, { name: editName, pin: editPin, role: editRole }); setEditId(null); } };
   const iS = { ...br, padding: "8px 10px", borderRadius: 8, fontSize: 14, background: t.inputBg, color: t.text, border: `1px solid ${t.border}`, boxSizing: "border-box" };
+  const canEditRole = isSuperAdmin(currentUser); // only super admin can change roles
+
   return <div style={{ background: t.card, borderRadius: 14, border: `1px solid ${t.border}`, padding: 24, marginBottom: 24 }}>
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
       <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Team Management</h3>
@@ -619,15 +615,19 @@ function AdminPanel({ t, users, currentUser, onAdd, onUpdate, onDelete, onClose 
       {users.map(u => {
         const isEditing = editId === u.id;
         const isSelf = u.id === currentUser.id;
+        const rl = ROLES[u.role] || ROLES.user;
         if (isEditing) return <div key={u.id} style={{ padding: "12px 0", borderBottom: `1px solid ${t.border}` }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
             <input value={editName} onChange={e => setEditName(e.target.value)} style={{ ...iS, flex: 1 }} placeholder="Name" />
             <input value={editPin} onChange={e => setEditPin(e.target.value.replace(/\D/g, "").slice(0,4))} style={{ ...iS, width: 80, textAlign: "center" }} placeholder="PIN" maxLength={4} />
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: t.muted, cursor: "pointer" }}>
-              <input type="checkbox" checked={u.is_admin} onChange={e => onUpdate(u.id, { isAdmin: e.target.checked })} style={{ accentColor: BRAND.primary, width: 16, height: 16 }} /> Admin access
-            </label>
+            {canEditRole && <select value={editRole} onChange={e => setEditRole(e.target.value)}
+              style={{ ...iS, padding: "6px 8px", fontSize: 13 }}>
+              <option value="user">User</option>
+              <option value="manager">Manager</option>
+              {isSuperAdmin(currentUser) && <option value="super_admin">Owner</option>}
+            </select>}
             <div style={{ flex: 1 }} />
             <button onClick={saveEdit} style={{ ...br, padding: "6px 14px", borderRadius: 8, background: BRAND.primary, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Save</button>
             <button onClick={() => setEditId(null)} style={{ ...br, padding: "6px 14px", borderRadius: 8, color: t.muted, fontSize: 13, cursor: "pointer", border: `1px solid ${t.border}` }}>Cancel</button>
@@ -636,7 +636,7 @@ function AdminPanel({ t, users, currentUser, onAdd, onUpdate, onDelete, onClose 
         return <div key={u.id} style={{ display: "flex", alignItems: "center", padding: "12px 0", borderBottom: `1px solid ${t.border}`, gap: 12 }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 14, fontWeight: 500 }}>{u.name}
-              {u.is_admin && <span style={{ color: BRAND.primary, fontSize: 12, fontWeight: 600, marginLeft: 8, background: BRAND.faint, padding: "2px 8px", borderRadius: 6 }}>ADMIN</span>}
+              <span style={{ color: rl.color, fontSize: 12, fontWeight: 600, marginLeft: 8, background: rl.color + "18", padding: "2px 8px", borderRadius: 6 }}>{rl.label}</span>
             </div>
             <div style={{ fontSize: 13, color: t.muted, marginTop: 2 }}>PIN: {u.pin}</div>
           </div>
